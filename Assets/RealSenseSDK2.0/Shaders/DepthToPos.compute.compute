@@ -4,24 +4,26 @@
 float fov_x;
 float fov_y;
 float far;
-float width;
-float height;
+int width;
+int height;
 
 // 깊이 이미지
 RWTexture2D<float4> Depth;
 
 // 포인트 클라우드 위치
-RWTexture2D<float4> Pos;
+RWBuffer<float3> Pos;
 
 // GPU 스레드 그룹 당 스레드 개수 64
 [numthreads(8,8,1)]
 void DepthToPos(uint3 id : SV_DispatchThreadID)
 {
-	// float fov_x = camera.x;
-	// float fov_y = camera.x * (camera.w / camera.z);
 	float z = Depth[id.xy] / far;
-	// TODO: calculate x, y
-	(id.x - width / 2)
 
-    Pos[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+	float alpha = tan(fov_x / 2) / ((width / 2) / z);
+	float x = (id.x - width / 2) * alpha;
+
+	float beta = tan(fov_y / 2) / ((height / 2) / z);
+	float y = (id.y - height / 2) * beta;
+
+    Pos[id.x * id.y] = float3(x, y, z);
 }
